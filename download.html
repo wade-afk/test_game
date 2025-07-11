@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Files - WASD Shooter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #111827; /* gray-900 */
+            color: #d1d5db; /* gray-300 */
+        }
+        .file-container {
+            border: 1px solid #374151; /* gray-700 */
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            background-color: #1f2937; /* gray-800 */
+            overflow: hidden;
+        }
+        .file-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: #374151; /* gray-700 */
+            border-bottom: 1px solid #4b5563; /* gray-600 */
+        }
+        .copy-btn {
+            background-color: #06b6d4; /* cyan-500 */
+            color: #111827;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        .copy-btn:hover {
+            background-color: #22d3ee; /* cyan-400 */
+        }
+        .copy-btn.copied {
+            background-color: #10b981; /* green-500 */
+        }
+        pre {
+            margin: 0;
+            padding: 1rem;
+            overflow-x: auto;
+            max-height: 500px;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 font-sans">
+    <div class="max-w-5xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold mb-2 text-cyan-300">WASD Shooter - Project Files</h1>
+            <p class="text-gray-400">
+                This file contains all the code for the project. Email services often block attachments with code for security reasons.
+                You can safely send this single HTML file. The recipient can then open it and copy the code for each file below.
+            </p>
+        </header>
+
+        <main id="file-list"></main>
+    </div>
+
+    <script>
+        const files = [
+            {
+                path: 'index.html',
+                content: `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Top-Down WASD Shooter</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#06b6d4">
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        cursor: crosshair;
+      }
+      #root {
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/"
+  }
+}
+<\/script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"><\/script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          }, err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+        });
+      }
+    <\/script>
+  </body>
+</html>`
+            },
+            {
+                path: 'index.tsx',
+                content: `
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
+}
+
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);`
+            },
+            {
+                path: 'App.tsx',
+                content: `
+import React, { useState, useCallback, useEffect } from 'react';
+import { GameStatus, WeaponType } from './types';
+import GameContainer from './components/GameContainer';
+import HUD from './components/HUD';
+
+const App: React.FC = () => {
+  const [gameStatus, setGameStatus] = useState<GameStatus>(GameStatus.Start);
+  const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0);
+  const [isNewHighScore, setIsNewHighScore] = useState(false);
+  const [selectedWeapon, setSelectedWeapon] = useState<WeaponType>(WeaponType.SHOTGUN);
+
+  useEffect(() => {
+    const savedHighScore = localStorage.getItem('wasd_shooter_highscore');
+    if (savedHighScore) {
+      setHighScore(parseInt(savedHighScore, 10));
+    }
+  }, []);
+
+  const handleWeaponSelect = useCallback((weapon: WeaponType) => {
+    setSelectedWeapon(weapon);
+  }, []);
+
+  const startGame = useCallback(() => {
+    setScore(0);
+    setIsNewHighScore(false);
+    setGameStatus(GameStatus.Playing);
+  }, []);
+  
+  const returnToMenu = useCallback(() => {
+    setGameStatus(GameStatus.Start);
+  }, []);
+
+  const gameOver = useCallback((finalScore: number) => {
+    setScore(finalScore);
+    setGameStatus(GameStatus.GameOver);
+    if (finalScore > highScore) {
+      setHighScore(finalScore);
+      localStorage.setItem('wasd_shooter_highscore', finalScore.toString());
+      setIsNewHighScore(true);
+    } else {
+      setIsNewHighScore(false);
+    }
+  }, [highScore]);
+
+  return (
+    <main className="w-screen h-screen bg-gray-800 font-sans select-none overflow-hidden">
+      {gameStatus === GameStatus.Playing ? (
+        <GameContainer onGameOver={gameOver} weapon={selectedWeapon} />
+      ) : (
+        <HUD 
+          status={gameStatus} 
+          score={score} 
+          highScore={highScore} 
+          onStartGame={startGame}
+          onReturnToMenu={returnToMenu}
+          isNewHighScore={isNewHighScore}
+          onWeaponSelect={handleWeaponSelect}
+          selectedWeapon={selectedWeapon}
+        />
+      )}
+    </main>
+  );
+};
+
+export default App;`
+            },
+            {
+                path: 'types.ts',
+                content: `
+export interface Vector2D {
+  x: number;
+  y: number;
+}
+
+export interface GameObject {
+  id: string;
+  position: Vector2D;
+  radius: number;
+}
+
+export enum PowerUpType {
+  HEALTH = 'HEALTH',
+  DOUBLE_SHOT = 'DOUBLE_SHOT',
+}
+
+export interface PowerUp extends GameObject {
+  type: PowerUpType;
+  spawnTime: number;
+}
+
+export enum WeaponType {
+  PISTOL = 'PISTOL',
+  SHOTGUN = 'SHOTGUN',
+  MACHINE_GUN = 'MACHINE_GUN',
+  SNIPER = 'SNIPER',
+}
+
+export interface PlayerState extends GameObject {
+  angle: number;
+  lives: number;
+  isInvincible: boolean;
+  isDoubleShotActive: boolean;
+  level: number;
+  xp: number;
+  xpToNextLevel: number;
+  weapon: WeaponType;
+}
+
+export interface MeleeAttackState {
+  id: string;
+  angle: number;
+  startTime: number;
+}
+
+export enum EnemyType {
+  NORMAL,
+  SQUARE,
+}
+
+export interface EnemyState extends GameObject {
+  type: EnemyType;
+  hp: number;
+}
+
+export interface ProjectileState extends GameObject {
+  velocity: Vector2D;
+  damage: number;
+  color: string;
+  weaponType: WeaponType;
+}
+
+export enum GameStatus {
+  Start,
+  Playing,
+  GameOver,
+}`
+            },
+            {
+                path: 'constants.ts',
+                content: `
+import { WeaponType } from './types';
+
+export const PLAYER_SIZE = 20; // radius
+export const ENEMY_SIZE = 15;  // radius
+export const POWER_UP_SIZE = 12; // radius
+
+export const PLAYER_SPEED = 0.25; // pixels per ms
+export const ENEMY_SPEED = 0.07; // pixels per ms
+
+export const ENEMY_SPAWN_INTERVAL = 800; // ms
+
+export const INITIAL_PLAYER_LIVES = 3;
+export const MAX_PLAYER_LIVES = 5;
+export const PLAYER_INVINCIBILITY_DURATION = 2000; // ms
+
+export const HEALTH_DROP_CHANCE = 0.03;
+export const DOUBLE_SHOT_DROP_CHANCE = 0.01;
+export const DOUBLE_SHOT_DURATION = 10000; // ms (10 seconds)
+
+export const SQUARE_ENEMY_SPAWN_CHANCE = 0.2;
+export const NORMAL_ENEMY_HP = 1;
+export const SQUARE_ENEMY_HP = 3;
+
+export const POWER_UP_LIFESPAN = 10000; // ms (10 seconds)
+
+export const SCORE_PER_STAGE = 250;
+export const ENEMY_SPAWN_INTERVAL_REDUCTION_PER_STAGE = 50; // ms
+export const MIN_ENEMY_SPAWN_INTERVAL = 250; // ms
+export const ENEMY_SPEED_INCREASE_PER_STAGE = 0.007; // pixels per ms
+
+// --- MELEE & LEVELING CONSTANTS ---
+export const MELEE_COOLDOWN = 1500; // ms
+export const MELEE_DURATION = 150; // ms
+export const MELEE_RANGE = 75; // pixels
+export const MELEE_ARC_ANGLE = 90; // degrees
+export const MELEE_DAMAGE = 3;
+
+export const XP_PER_NORMAL_ENEMY = 10;
+export const XP_PER_SQUARE_ENEMY = 20;
+export const BASE_XP_TO_LEVEL_UP = 400;
+export const XP_INCREMENT_PER_LEVEL = 200;
+export const FIRE_RATE_BONUS_PER_LEVEL = 0.07; // 7% faster fire rate per level
+
+// --- WEAPON CONSTANTS ---
+interface WeaponData {
+  name: string;
+  description: string;
+  cooldown: number; // ms
+  damage: number;
+  projectileSpeed: number; // pixels per ms
+  projectilesPerShot: number;
+  spreadAngle: number; // degrees
+  color: string;
+  projectileSize: number; // radius
+}
+
+export const WEAPONS: { [key in WeaponType]: WeaponData } = {
+  [WeaponType.PISTOL]: {
+    name: 'Pistol',
+    description: 'Balanced, all-purpose sidearm.',
+    cooldown: 250,
+    damage: 1,
+    projectileSpeed: 0.6,
+    projectilesPerShot: 1,
+    spreadAngle: 0,
+    color: '#fde047', // yellow-300
+    projectileSize: 3,
+  },
+  [WeaponType.SHOTGUN]: {
+    name: 'Shotgun',
+    description: 'Devastating at close range.',
+    cooldown: 800,
+    damage: 1,
+    projectileSpeed: 0.5,
+    projectilesPerShot: 6,
+    spreadAngle: 5, // spread for each pellet
+    color: '#fb923c', // orange-400
+    projectileSize: 2.5,
+  },
+  [WeaponType.MACHINE_GUN]: {
+    name: 'Machine Gun',
+    description: 'High fire rate, low accuracy.',
+    cooldown: 80,
+    damage: 0.7,
+    projectileSpeed: 0.7,
+    projectilesPerShot: 1,
+    spreadAngle: 4, // random spread
+    color: '#60a5fa', // blue-400
+    projectileSize: 2.5,
+  },
+  [WeaponType.SNIPER]: {
+    name: 'Sniper Rifle',
+    description: 'Slow, but powerful and precise.',
+    cooldown: 1200,
+    damage: 4,
+    projectileSpeed: 1.2,
+    projectilesPerShot: 1,
+    spreadAngle: 0,
+    color: '#f472b6', // pink-400
+    projectileSize: 3,
+  },
+};`
+            },
+            {
+                path: 'components/GameContainer.tsx',
+                content: `
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useGameLoop } from '../hooks/useGameLoop';
+import { useKeyboardInput } from '../hooks/useKeyboardInput';
+import { PlayerState, EnemyState, ProjectileState, Vector2D, PowerUp as PowerUpState, PowerUpType, EnemyType, MeleeAttackState, WeaponType } from '../types';
+import { 
+  PLAYER_SIZE, ENEMY_SIZE, PLAYER_SPEED, ENEMY_SPEED, 
+  ENEMY_SPAWN_INTERVAL, INITIAL_PLAYER_LIVES, PLAYER_INVINCIBILITY_DURATION,
+  POWER_UP_SIZE, MAX_PLAYER_LIVES, HEALTH_DROP_CHANCE, DOUBLE_SHOT_DROP_CHANCE, DOUBLE_SHOT_DURATION,
+  POWER_UP_LIFESPAN, SCORE_PER_STAGE, ENEMY_SPAWN_INTERVAL_REDUCTION_PER_STAGE,
+  MIN_ENEMY_SPAWN_INTERVAL, ENEMY_SPEED_INCREASE_PER_STAGE, SQUARE_ENEMY_SPAWN_CHANCE,
+  NORMAL_ENEMY_HP, SQUARE_ENEMY_HP, MELEE_COOLDOWN, MELEE_DURATION, MELEE_RANGE, MELEE_ARC_ANGLE, MELEE_DAMAGE,
+  XP_PER_NORMAL_ENEMY, XP_PER_SQUARE_ENEMY, BASE_XP_TO_LEVEL_UP, XP_INCREMENT_PER_LEVEL, FIRE_RATE_BONUS_PER_LEVEL,
+  WEAPONS
+} from '../constants';
+import Player from './Player';
+import Enemy from './Enemy';
+import Projectile from './Projectile';
+import PowerUp from './PowerUp';
+import MeleeAttack from './MeleeAttack';
+
+interface GameContainerProps {
+  onGameOver: (score: number) => void;
+  weapon: WeaponType;
+}
+
+// Helper to normalize angle differences
+const getAngleDiff = (a1: number, a2: number) => {
+    let diff = a1 - a2;
+    while (diff < -180) diff += 360;
+    while (diff > 180) diff += 360;
+    return diff;
+};
+
+const GameContainer: React.FC<GameContainerProps> = ({ onGameOver, weapon }) => {
+  const [player, setPlayer] = useState<PlayerState>({
+    id: 'player',
+    position: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+    radius: PLAYER_SIZE,
+    angle: 0,
+    lives: INITIAL_PLAYER_LIVES,
+    isInvincible: false,
+    isDoubleShotActive: false,
+    level: 1,
+    xp: 0,
+    xpToNextLevel: BASE_XP_TO_LEVEL_UP,
+    weapon: weapon,
+  });
+  const [enemies, setEnemies] = useState<EnemyState[]>([]);
+  const [projectiles, setProjectiles] = useState<ProjectileState[]>([]);
+  const [powerUps, setPowerUps] = useState<PowerUpState[]>([]);
+  const [meleeAttack, setMeleeAttack] = useState<MeleeAttackState | null>(null);
+  const [score, setScore] = useState(0);
+  const [stage, setStage] = useState(1);
+  const [mousePosition, setMousePosition] = useState<Vector2D>({ x: 0, y: 0 });
+  
+  const keysPressed = useKeyboardInput();
+  const gameAreaRef = useRef<HTMLDivElement>(null);
+
+  // Timers and State Refs
+  const lastShotTimeRef = useRef(0);
+  const lastEnemySpawnTimeRef = useRef(0);
+  const lastMeleeTimeRef = useRef(0);
+  const invincibilityEndTimeRef = useRef(0);
+  const doubleShotEndTimeRef = useRef(0);
+  const primaryWeaponRef = useRef<WeaponType>(weapon);
+  const eKeyPressedRef = useRef(false);
+
+  // Update stage based on score
+  useEffect(() => {
+    const newStage = Math.floor(score / SCORE_PER_STAGE) + 1;
+    if (newStage > stage) {
+      setStage(newStage);
+    }
+  }, [score, stage]);
+
+  // Mouse/Keyboard handlers
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => setMousePosition({ x: e.clientX, y: e.clientY });
+    const handleMouseDown = (e: MouseEvent) => e.button === 0 && keysPressed.add('mousedown');
+    const handleMouseUp = (e: MouseEvent) => e.button === 0 && keysPressed.delete('mousedown');
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [keysPressed]);
+
+
+  const gameLoopCallback = useCallback((deltaTime: number) => {
+    if (!gameAreaRef.current) return;
+    const { width, height } = gameAreaRef.current.getBoundingClientRect();
+    const now = Date.now();
+
+    // --- DIFFFULTY & STAT SCALING ---
+    const weaponData = WEAPONS[player.weapon];
+    const fireRateBonus = 1 + (player.level - 1) * FIRE_RATE_BONUS_PER_LEVEL;
+    const currentCooldown = weaponData.cooldown / fireRateBonus;
+    const currentEnemySpawnInterval = Math.max(MIN_ENEMY_SPAWN_INTERVAL, ENEMY_SPAWN_INTERVAL - (stage - 1) * ENEMY_SPAWN_INTERVAL_REDUCTION_PER_STAGE);
+    const currentEnemySpeed = ENEMY_SPEED + (stage - 1) * ENEMY_SPEED_INCREASE_PER_STAGE;
+    
+    // --- TIMEOUTS & LIFESPAN ---
+    if (player.isInvincible && now > invincibilityEndTimeRef.current) setPlayer(p => ({ ...p, isInvincible: false }));
+    if (player.isDoubleShotActive && now > doubleShotEndTimeRef.current) setPlayer(p => ({ ...p, isDoubleShotActive: false }));
+    setPowerUps(prev => prev.filter(p => now < p.spawnTime + POWER_UP_LIFESPAN));
+    if (meleeAttack && now > meleeAttack.startTime + MELEE_DURATION) setMeleeAttack(null);
+
+    // --- PLAYER MOVEMENT ---
+    setPlayer(p => {
+      let moveVector = { x: 0, y: 0 };
+      if (keysPressed.has('w')) moveVector.y -= 1;
+      if (keysPressed.has('s')) moveVector.y += 1;
+      if (keysPressed.has('a')) moveVector.x -= 1;
+      if (keysPressed.has('d')) moveVector.x += 1;
+
+      const len = Math.sqrt(moveVector.x ** 2 + moveVector.y ** 2);
+      if (len > 0) {
+        moveVector.x /= len;
+        moveVector.y /= len;
+      }
+      
+      const moveDistance = PLAYER_SPEED * deltaTime;
+      let newX = p.position.x + moveVector.x * moveDistance;
+      let newY = p.position.y + moveVector.y * moveDistance;
+      newX = Math.max(p.radius, Math.min(width - p.radius, newX));
+      newY = Math.max(p.radius, Math.min(height - p.radius, newY));
+
+      const dx = mousePosition.x - newX;
+      const dy = mousePosition.y - newY;
+      const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+      
+      return { ...p, position: { x: newX, y: newY }, angle };
+    });
+
+    // --- WEAPON SWAP LOGIC ---
+    if (keysPressed.has('e')) {
+        if (!eKeyPressedRef.current) {
+            eKeyPressedRef.current = true;
+            setPlayer(p => {
+                const newWeapon = p.weapon === WeaponType.PISTOL ? primaryWeaponRef.current : WeaponType.PISTOL;
+                return { ...p, weapon: newWeapon };
+            });
+        }
+    } else {
+        eKeyPressedRef.current = false;
+    }
+
+    // --- SHOOTING & MELEE LOGIC ---
+    if (keysPressed.has('mousedown') && now - lastShotTimeRef.current > currentCooldown) {
+      lastShotTimeRef.current = now;
+      const newProjectiles: ProjectileState[] = [];
+      
+      const shotCount = player.isDoubleShotActive ? weaponData.projectilesPerShot * 2 : weaponData.projectilesPerShot;
+
+      for (let i = 0; i < shotCount; i++) {
+        const dx = mousePosition.x - player.position.x;
+        const dy = mousePosition.y - player.position.y;
+        const angleRad = Math.atan2(dy, dx);
+        
+        let spread = 0;
+        if (weaponData.projectilesPerShot > 1) { // Shotgun spread
+            spread = (i - (weaponData.projectilesPerShot - 1) / 2) * (weaponData.spreadAngle * Math.PI / 180);
+        } else if (weaponData.spreadAngle > 0) { // Machine gun spread
+            spread = (Math.random() - 0.5) * 2 * (weaponData.spreadAngle * Math.PI / 180);
+        }
+
+        const finalAngle = angleRad + spread;
+        const velocity = { x: Math.cos(finalAngle) * weaponData.projectileSpeed, y: Math.sin(finalAngle) * weaponData.projectileSpeed };
+
+        let startPos = { ...player.position };
+        if (player.isDoubleShotActive && weaponData.projectilesPerShot === 1) {
+            // Give double shot a slight offset for single-shot weapons
+            const perp = { x: -velocity.y, y: velocity.x };
+            const spreadAmount = 8 / weaponData.projectileSpeed;
+            startPos = { 
+                x: player.position.x + (i % 2 === 0 ? 1 : -1) * perp.x * spreadAmount, 
+                y: player.position.y + (i % 2 === 0 ? 1 : -1) * perp.y * spreadAmount
+            };
+        }
+
+        newProjectiles.push({
+          id: \`proj_\${now}_\${i}\`,
+          position: startPos,
+          velocity,
+          radius: weaponData.projectileSize,
+          damage: weaponData.damage,
+          color: weaponData.color,
+          weaponType: player.weapon,
+        });
+      }
+      setProjectiles(prev => [...prev, ...newProjectiles]);
+    }
+    
+    if (keysPressed.has('f') && now - lastMeleeTimeRef.current > MELEE_COOLDOWN) {
+        lastMeleeTimeRef.current = now;
+        setMeleeAttack({ id: \`melee_\${now}\`, angle: player.angle, startTime: now });
+    }
+
+    // --- UPDATE PROJECTILE POSITIONS ---
+    setProjectiles(prev => 
+      prev.map(p => ({ ...p, position: { x: p.position.x + p.velocity.x * deltaTime, y: p.position.y + p.velocity.y * deltaTime } }))
+          .filter(p => p.position.x > 0 && p.position.x < width && p.position.y > 0 && p.position.y < height)
+    );
+
+    // --- CALCULATE NEXT ENEMY STATE (MOVEMENT & SPAWNING) ---
+    // First, move existing enemies
+    let nextEnemies = enemies.map(e => {
+        const dx = player.position.x - e.position.x;
+        const dy = player.position.y - e.position.y;
+        const distSq = dx * dx + dy * dy;
+        if (distSq > 1) {
+            const len = Math.sqrt(distSq);
+            const moveDistance = currentEnemySpeed * deltaTime;
+            return { ...e, position: { x: e.position.x + (dx / len) * moveDistance, y: e.position.y + (dy / len) * moveDistance } };
+        }
+        return e;
+    });
+
+    // Second, spawn new enemies and add them to the list
+    if (now - lastEnemySpawnTimeRef.current > currentEnemySpawnInterval) {
+      lastEnemySpawnTimeRef.current = now;
+      const side = Math.floor(Math.random() * 4);
+      let pos: Vector2D;
+      switch(side) {
+        case 0: pos = { x: Math.random() * width, y: -ENEMY_SIZE }; break;
+        case 1: pos = { x: Math.random() * width, y: height + ENEMY_SIZE }; break;
+        case 2: pos = { x: -ENEMY_SIZE, y: Math.random() * height }; break;
+        default: pos = { x: width + ENEMY_SIZE, y: Math.random() * height }; break;
+      }
+      const type = Math.random() < SQUARE_ENEMY_SPAWN_CHANCE ? EnemyType.SQUARE : EnemyType.NORMAL;
+      const newEnemy: EnemyState = { id: \`enemy_\${now}\`, position: pos, radius: ENEMY_SIZE, type, hp: type === EnemyType.SQUARE ? SQUARE_ENEMY_HP : NORMAL_ENEMY_HP };
+      nextEnemies.push(newEnemy);
+    }
+    
+    // --- COLLISION DETECTION & GAME STATE UPDATES ---
+    const hitProjectiles = new Set<string>();
+    const newlySpawnedPowerUps: PowerUpState[] = [];
+    let enemiesAfterProcessing = [...nextEnemies]; // Work with the moved/spawned enemies
+    const destroyedEnemyIndices = new Set<number>();
+    let newScore = score;
+    let newXp = player.xp;
+
+    // Check melee hits
+    if (meleeAttack) {
+        enemiesAfterProcessing = enemiesAfterProcessing.map((enemy, index) => {
+            if (destroyedEnemyIndices.has(index)) return enemy;
+
+            const dx = enemy.position.x - player.position.x;
+            const dy = enemy.position.y - player.position.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < MELEE_RANGE + enemy.radius) {
+                const enemyAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+                const angleDiff = Math.abs(getAngleDiff(player.angle, enemyAngle));
+                if (angleDiff <= MELEE_ARC_ANGLE / 2) {
+                     const newHp = enemy.hp - MELEE_DAMAGE;
+                     if (newHp <= 0) destroyedEnemyIndices.add(index);
+                     return { ...enemy, hp: newHp };
+                }
+            }
+            return enemy;
+        });
+    }
+
+    // Check projectile hits
+    projectiles.forEach(p => {
+        if (hitProjectiles.has(p.id)) return;
+        
+        for (let i = 0; i < enemiesAfterProcessing.length; i++) {
+            if (destroyedEnemyIndices.has(i)) continue;
+            
+            const enemy = enemiesAfterProcessing[i];
+            const dx = p.position.x - enemy.position.x;
+            const dy = p.position.y - enemy.position.y;
+            
+            if ((dx * dx + dy * dy) < (p.radius + enemy.radius) ** 2) {
+                hitProjectiles.add(p.id);
+                const newHp = enemy.hp - p.damage;
+                enemiesAfterProcessing[i] = { ...enemy, hp: newHp };
+                if (newHp <= 0) {
+                    destroyedEnemyIndices.add(i);
+                }
+                break; // Projectile hits one enemy and is destroyed
+            }
+        }
+    });
+
+    // Process destroyed enemies and determine final enemy list for this frame
+    const finalEnemies = enemiesAfterProcessing.filter((enemy, index) => {
+        if (destroyedEnemyIndices.has(index)) {
+            newScore += (enemy.type === EnemyType.NORMAL ? 1 : 2) * 10;
+            newXp += (enemy.type === EnemyType.NORMAL ? XP_PER_NORMAL_ENEMY : XP_PER_SQUARE_ENEMY);
+            
+            const dropRoll = Math.random();
+            if (dropRoll < DOUBLE_SHOT_DROP_CHANCE) {
+                newlySpawnedPowerUps.push({ id: \`powerup_\${now}_\${enemy.id}\`, position: enemy.position, radius: POWER_UP_SIZE, type: PowerUpType.DOUBLE_SHOT, spawnTime: now });
+            } else if (dropRoll < DOUBLE_SHOT_DROP_CHANCE + HEALTH_DROP_CHANCE) {
+                newlySpawnedPowerUps.push({ id: \`powerup_\${now}_\${enemy.id}\`, position: enemy.position, radius: POWER_UP_SIZE, type: PowerUpType.HEALTH, spawnTime: now });
+            }
+            return false;
+        }
+        return true;
+    });
+
+    // Update game state based on this frame's events
+    if (newScore !== score) setScore(newScore);
+    
+    if (newXp !== player.xp) {
+        setPlayer(p => {
+            let currentXp = newXp;
+            let currentLevel = p.level;
+            let currentXpToNext = p.xpToNextLevel;
+            while (currentXp >= currentXpToNext) {
+                currentLevel++;
+                currentXp -= currentXpToNext;
+                currentXpToNext = BASE_XP_TO_LEVEL_UP + (currentLevel - 1) * XP_INCREMENT_PER_LEVEL;
+            }
+            return { ...p, xp: currentXp, level: currentLevel, xpToNextLevel: currentXpToNext };
+        });
+    }
+
+    // Commit the final list of enemies for this frame
+    setEnemies(finalEnemies);
+    setProjectiles(prev => prev.filter(p => !hitProjectiles.has(p.id)));
+    if (newlySpawnedPowerUps.length > 0) setPowerUps(prev => [...prev, ...newlySpawnedPowerUps]);
+    
+    // --- PLAYER vs POWER-UPS COLLISION ---
+    const collectedPowerUpIds = new Set<string>();
+    powerUps.forEach(powerUp => {
+      if (Math.hypot(player.position.x - powerUp.position.x, player.position.y - powerUp.position.y) < player.radius + powerUp.radius) {
+        collectedPowerUpIds.add(powerUp.id);
+        if (powerUp.type === PowerUpType.HEALTH) setPlayer(p => ({ ...p, lives: Math.min(p.lives + 1, MAX_PLAYER_LIVES) }));
+        if (powerUp.type === PowerUpType.DOUBLE_SHOT) {
+            setPlayer(p => ({ ...p, isDoubleShotActive: true }));
+            doubleShotEndTimeRef.current = now + DOUBLE_SHOT_DURATION;
+        }
+      }
+    });
+    if (collectedPowerUpIds.size > 0) setPowerUps(prev => prev.filter(p => !collectedPowerUpIds.has(p.id)));
+
+    // --- PLAYER vs ENEMIES COLLISION ---
+    if (!player.isInvincible && finalEnemies.some(e => Math.hypot(player.position.x - e.position.x, player.position.y - e.position.y) < player.radius + e.radius)) {
+      const newLives = player.lives - 1;
+      if (newLives <= 0) {
+        onGameOver(score); // Use the score from the beginning of the frame for fairness
+        return;
+      }
+      invincibilityEndTimeRef.current = now + PLAYER_INVINCIBILITY_DURATION;
+      setPlayer(p => ({ ...p, lives: newLives, isInvincible: true }));
+    }
+
+  }, [player, keysPressed, mousePosition, onGameOver, score, enemies, projectiles, powerUps, stage, meleeAttack]);
+
+  useGameLoop(gameLoopCallback);
+
+  return (
+    <div 
+      ref={gameAreaRef} 
+      className="relative w-full h-full overflow-hidden bg-gray-900"
+      style={{
+        backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
+        backgroundSize: '20px 20px',
+      }}
+    >
+        {/* HUD */}
+        <div className="absolute top-4 left-4 text-white text-lg font-bold z-10 flex flex-col items-start gap-2">
+            <div className="flex items-center gap-4">
+                <span>Score: {score}</span>
+                <span className="text-green-400">Stage: {stage}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <span className="text-cyan-400">Lv. {player.level}</span>
+                <div className="w-40 h-4 bg-gray-700 rounded-full overflow-hidden border border-gray-500">
+                    <div className="h-full bg-cyan-400 rounded-full transition-all duration-300" style={{width: \`\${(player.xp / player.xpToNextLevel) * 100}%\`}}></div>
+                </div>
+            </div>
+             {player.isDoubleShotActive && (
+                <span className="text-yellow-400 text-sm font-bold animate-pulse px-2 py-1 rounded-md bg-black bg-opacity-40 border border-yellow-500">
+                    DOUBLE SHOT
+                </span>
+            )}
+        </div>
+        <div className="absolute top-4 right-4 text-white text-2xl font-bold z-10 flex items-center gap-2">
+            <span className="text-red-500 text-3xl">♥</span>
+            <span>{player.lives}</span>
+        </div>
+
+        {/* Game Objects */}
+        <Player {...player} />
+        {meleeAttack && <MeleeAttack {...meleeAttack} playerPosition={player.position} />}
+        {enemies.map(enemy => <Enemy key={enemy.id} {...enemy} maxHp={enemy.type === EnemyType.SQUARE ? SQUARE_ENEMY_HP : NORMAL_ENEMY_HP} />)}
+        {projectiles.map( projectile => <Projectile key={projectile.id} {...projectile} />)}
+        {powerUps.map(powerUp => <PowerUp key={powerUp.id} {...powerUp} />)}
+    </div>
+  );
+};
+
+export default GameContainer;`
+            },
+            {
+                path: 'components/Player.tsx',
+                content: `
+import React from 'react';
+import { PlayerState } from '../types';
+
+const Player: React.FC<PlayerState> = ({ position, radius, angle, isInvincible }) => {
+  const size = radius * 2.5; // Make sprite slightly larger than hitbox for better visuals
+  return (
+    <div
+      className={\`absolute transition-opacity duration-150 \${isInvincible ? 'opacity-50 animate-pulse' : 'opacity-100'}\`}
+      style={{
+        left: position.x - size / 2,
+        top: position.y - size / 2,
+        width: size,
+        height: size,
+        transform: \`rotate(\${angle}deg)\`,
+      }}
+    >
+      <svg viewBox="-25 -25 50 50" className="w-full h-full">
+        {/* Rifle */}
+        <rect x="0" y="-3" width="22" height="6" rx="2" fill="#334155" /> {/* Gun Body */}
+        <rect x="22" y="-1.5" width="3" height="3" rx="1" fill="#475569" /> {/* Gun Tip */}
+        
+        {/* Body */}
+        <circle cx="-8" cy="0" r="10" fill="#16a34a" stroke="#14532d" strokeWidth="1" />
+        
+        {/* Head */}
+        <circle cx="-8" cy="0" r="7" fill="#15803d" />
+      </svg>
+    </div>
+  );
+};
+
+export default React.memo(Player);`
+            },
+            {
+                path: 'components/Enemy.tsx',
+                content: `
+import React from 'react';
+import { EnemyState, EnemyType } from '../types';
+
+interface EnemyProps extends EnemyState {
+  maxHp: number;
+}
+
+const Enemy: React.FC<EnemyProps> = ({ position, radius, type, hp, maxHp }) => {
+  const size = radius * 2.5; // Make sprite slightly larger than hitbox
+  const style = {
+    left: position.x - size / 2,
+    top: position.y - size / 2,
+    width: size,
+    height: size,
+  };
+
+  const healthPercentage = Math.max(0, (hp / maxHp) * 100);
+  // Only show the health bar if the enemy isn't at full health and isn't dead.
+  const showHealthBar = hp < maxHp && hp > 0;
+
+  const EnemySprite = () => {
+    if (type === EnemyType.SQUARE) {
+      return (
+        <svg viewBox="-25 -25 50 50" className="w-full h-full">
+          <rect x="-18" y="-18" width="36" height="36" rx="4" fill="#5b21b6" stroke="#a78bfa" strokeWidth="2" />
+          <rect x="-12" y="-12" width="24" height="24" rx="2" fill="#4c1d95" />
+          <rect x="-5" y="-5" width="10" height="10" fill="#c4b5fd" className="animate-pulse" />
+        </svg>
+      );
+    }
+    // Normal enemy
+    return (
+       <svg viewBox="-20 -20 40 40" className="w-full h-full">
+        <circle cx="0" cy="0" r="15" fill="#4a5568" stroke="#718096" strokeWidth="2" />
+        <circle cx="0" cy="0" r="10" fill="#2d3748" />
+        <circle cx="0" cy="0" r="5" fill="#ef4444" className="animate-pulse" />
+      </svg>
+    );
+  };
+
+  return (
+    <div className="absolute" style={style}>
+      {showHealthBar && (
+        <div 
+          className="absolute w-full flex justify-center"
+          style={{ top: type === EnemyType.SQUARE ? '-12px' : '-8px' }}
+        >
+          <div className="w-10 h-1.5 bg-gray-800 bg-opacity-70 rounded-full border border-black/50 overflow-hidden">
+            <div
+              className="h-full bg-red-500 rounded-full transition-all duration-200"
+              style={{ width: \`\${healthPercentage}%\` }}
+            />
+          </div>
+        </div>
+      )}
+      <EnemySprite />
+    </div>
+  );
+};
+
+
+export default React.memo(Enemy);`
+            },
+            {
+                path: 'components/Projectile.tsx',
+                content: `
+import React from 'react';
+import { ProjectileState, WeaponType } from '../types';
+
+const Projectile: React.FC<ProjectileState> = ({ position, radius, velocity, color, weaponType }) => {
+  const isSniperShot = weaponType === WeaponType.SNIPER;
+
+  if (isSniperShot) {
+    const angle = Math.atan2(velocity.y, velocity.x) * (180 / Math.PI);
+    const width = radius * 5;
+    const height = radius * 0.8;
+    return (
+      <div
+        className="absolute rounded-sm"
+        style={{
+          left: position.x - width / 2,
+          top: position.y - height / 2,
+          width: width,
+          height: height,
+          backgroundColor: color,
+          boxShadow: \`0 0 8px 2px \${color}99\`,
+          transform: \`rotate(\${angle}deg)\`,
+          transformOrigin: 'center center',
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      className="absolute rounded-full"
+      style={{
+        left: position.x - radius,
+        top: position.y - radius,
+        width: radius * 2,
+        height: radius * 2,
+        backgroundColor: color,
+        boxShadow: \`0 0 8px 2px \${color}B3\`,
+      }}
+    />
+  );
+};
+
+export default React.memo(Projectile);`
+            },
+            {
+                path: 'components/HUD.tsx',
+                content: `
+import React from 'react';
+import { GameStatus, WeaponType } from '../types';
+import Confetti from './Confetti';
+import { WEAPONS } from '../constants';
+
+interface HUDProps {
+  status: GameStatus;
+  score: number;
+  highScore: number;
+  onStartGame: () => void;
+  onReturnToMenu: () => void;
+  isNewHighScore: boolean;
+  onWeaponSelect: (weapon: WeaponType) => void;
+  selectedWeapon: WeaponType;
+}
+
+const HUD: React.FC<HUDProps> = ({ status, score, highScore, onStartGame, onReturnToMenu, isNewHighScore, onWeaponSelect, selectedWeapon }) => {
+  const isVisible = status === GameStatus.Start || status === GameStatus.GameOver;
+
+  if (!isVisible) {
+    return null;
+  }
+
+  const title = status === GameStatus.Start ? 'WASD Shooter' : 'Game Over';
+  const buttonText = status === GameStatus.Start ? 'Start Game' : 'Restart Game';
+
+  return (
+    <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center text-white z-20 backdrop-blur-sm p-4">
+      {status === GameStatus.GameOver && isNewHighScore && <Confetti />}
+      <h1 className="text-5xl md:text-6xl font-bold mb-4 tracking-wider text-cyan-300 drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">{title}</h1>
+      
+      {status === GameStatus.GameOver && (
+        <div className="text-center mb-8">
+            <p className="text-3xl mb-2">Your Score: {score}</p>
+            <p className="text-xl text-yellow-400">High Score: {highScore}</p>
+        </div>
+      )}
+
+      {status === GameStatus.Start && (
+        <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold mb-3 text-cyan-200">Select Your Primary Weapon</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                {(Object.keys(WEAPONS) as WeaponType[]).filter(key => key !== WeaponType.PISTOL).map((key) => {
+                    const weapon = WEAPONS[key];
+                    const isSelected = selectedWeapon === key;
+                    return (
+                        <button
+                            key={key}
+                            onClick={() => onWeaponSelect(key)}
+                            className={\`p-4 rounded-lg text-left transition-all duration-200 border-2 \${isSelected ? 'bg-cyan-500 border-cyan-300 scale-105' : 'bg-gray-700 border-gray-600 hover:bg-gray-600 hover:border-gray-500'}\`}
+                        >
+                            <h3 className={\`font-bold text-xl \${isSelected ? 'text-black' : 'text-white'}\`}>{weapon.name}</h3>
+                            <p className={\`text-sm \${isSelected ? 'text-gray-900' : 'text-gray-300'}\`}>{weapon.description}</p>
+                        </button>
+                    )
+                })}
+            </div>
+        </div>
+      )}
+
+      <button
+        onClick={status === GameStatus.Start ? onStartGame : onReturnToMenu}
+        className="px-8 py-4 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-2xl rounded-lg shadow-lg transition-transform transform hover:scale-105"
+      >
+        {buttonText}
+      </button>
+
+      {status === GameStatus.Start && (
+        <div className="text-center text-sm text-gray-400 mt-8 max-w-xl bg-gray-900 bg-opacity-50 p-3 rounded-lg">
+            <p><span className="font-mono bg-gray-700 px-2 py-1 rounded">WASD</span> Move | <span className="font-mono bg-gray-700 px-2 py-1 rounded">Mouse</span> Aim | <span className="font-mono bg-gray-700 px-2 py-1 rounded">Click</span> Shoot</p>
+            <p className="mt-1"><span className="font-mono bg-gray-700 px-2 py-1 rounded">F</span> Melee | <span className="font-mono bg-gray-700 px-2 py-1 rounded">E</span> Swap Weapon</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default HUD;`
+            },
+            {
+                path: 'components/PowerUp.tsx',
+                content: `
+import React from 'react';
+import { PowerUp as PowerUpState, PowerUpType } from '../types';
+
+const PowerUp: React.FC<PowerUpState> = ({ position, radius, type }) => {
+  const size = radius * 2;
+
+  const style = {
+    left: position.x - radius,
+    top: position.y - radius,
+    width: size,
+    height: size,
+  };
+
+  const content = () => {
+    switch (type) {
+      case PowerUpType.HEALTH:
+        return (
+          <div className="w-full h-full flex items-center justify-center text-red-500 text-2xl drop-shadow-[0_0_5px_rgba(255,255,255,0.7)]">
+            ♥
+          </div>
+        );
+      case PowerUpType.DOUBLE_SHOT:
+        return (
+           <div className="w-full h-full flex items-center justify-center text-yellow-400 text-lg font-bold drop-shadow-[0_0_5px_rgba(255,255,255,0.7)]">
+            x2
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div
+      className="absolute rounded-full animate-bounce bg-black bg-opacity-30 backdrop-blur-sm border-2 border-white border-opacity-50"
+      style={{
+        ...style,
+        animation: 'bounce 1s infinite, fadeOut 10s forwards'
+      }}
+    >
+      <style>
+        {\`
+          @keyframes fadeOut {
+            0%, 80% { opacity: 1; }
+            100% { opacity: 0; }
+          }
+        \`}
+      </style>
+      {content()}
+    </div>
+  );
+};
+
+export default React.memo(PowerUp);`
+            },
+            {
+                path: 'components/Confetti.tsx',
+                content: `
+import React from 'react';
+
+const CONFETTI_COUNT = 150;
+const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800'];
+
+const Confetti: React.FC = () => {
+  const confettiPieces = Array.from({ length: CONFETTI_COUNT }).map((_, index) => {
+    const animationDuration = 3 + Math.random() * 2;
+    const animationDelay = Math.random() * 0.5;
+
+    const style: React.CSSProperties = {
+      '--random-angle': \`\${Math.random() * 360}deg\`,
+      '--random-radius': \`\${25 + Math.random() * 50}vw\`,
+      width: \`\${Math.round(Math.random() * 6 + 4)}px\`,
+      height: \`\${Math.round(Math.random() * 8 + 8)}px\`,
+      backgroundColor: colors[index % colors.length],
+      animation: \`confetti-burst \${animationDuration}s \${animationDelay}s cubic-bezier(0.1, 1, 0.7, 1) forwards\`,
+    } as React.CSSProperties;
+    
+    return <div key={index} className="absolute" style={style} />;
+  });
+
+  return (
+    <>
+      <style>
+        {\`
+          @keyframes confetti-burst {
+            0% {
+              transform: translate(-50%, -50%) rotate(0deg) scale(1);
+              opacity: 1;
+            }
+            100% {
+              transform: translate(calc(cos(var(--random-angle)) * var(--random-radius) - 50%), calc(sin(var(--random-angle)) * var(--random-radius) - 50% + 100vh)) rotate(1080deg) scale(0);
+              opacity: 0.5;
+            }
+          }
+        \`}
+      </style>
+      <div className="absolute top-1/4 left-1/2 w-0 h-0 pointer-events-none z-50">
+        {confettiPieces}
+      </div>
+    </>
+  );
+};
+
+export default React.memo(Confetti);`
+            },
+            {
+                path: 'components/MeleeAttack.tsx',
+                content: `
+import React from 'react';
+import { Vector2D } from '../types';
+import { MELEE_RANGE, MELEE_ARC_ANGLE, MELEE_DURATION } from '../constants';
+
+interface MeleeAttackProps {
+  id: string;
+  angle: number;
+  startTime: number;
+  playerPosition: Vector2D;
+}
+
+const MeleeAttack: React.FC<MeleeAttackProps> = ({ angle, playerPosition }) => {
+  const arcPath = () => {
+    const startAngle = -MELEE_ARC_ANGLE / 2;
+    const endAngle = MELEE_ARC_ANGLE / 2;
+
+    const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
+      const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+      return {
+        x: centerX + radius * Math.cos(angleInRadians),
+        y: centerY + radius * Math.sin(angleInRadians),
+      };
+    };
+
+    const start = polarToCartesian(0, 0, MELEE_RANGE, endAngle);
+    const end = polarToCartesian(0, 0, MELEE_RANGE, startAngle);
+
+    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+
+    const d = [
+      'M', 0, 0,
+      'L', start.x, start.y,
+      'A', MELEE_RANGE, MELEE_RANGE, 0, largeArcFlag, 0, end.x, end.y,
+      'L', 0, 0,
+    ].join(' ');
+
+    return d;
+  };
+  
+  return (
+    <div
+      className="absolute"
+      style={{
+        left: playerPosition.x,
+        top: playerPosition.y,
+        transform: \`rotate(\${angle}deg)\`,
+        animation: \`melee-fade \${MELEE_DURATION}ms ease-out forwards\`,
+      }}
+    >
+      <style>
+        {\`
+          @keyframes melee-fade {
+            0% { opacity: 0.8; transform: rotate(\${angle}deg) scale(0.8); }
+            50% { opacity: 1; transform: rotate(\${angle}deg) scale(1.1); }
+            100% { opacity: 0; transform: rotate(\${angle}deg) scale(1.2); }
+          }
+        \`}
+      </style>
+      <svg
+        viewBox={\`-\${MELEE_RANGE + 10} -\${MELEE_RANGE + 10} \${(MELEE_RANGE + 10) * 2} \${(MELEE_RANGE + 10) * 2}\`}
+        className="overflow-visible"
+        style={{ width: (MELEE_RANGE + 10) * 2, height: (MELEE_RANGE + 10) * 2, transform: 'translate(-50%, -50%)' }}
+      >
+        <path d={arcPath()} fill="rgba(255, 255, 255, 0.5)" stroke="rgba(200, 255, 255, 0.8)" strokeWidth="2" />
+      </svg>
+    </div>
+  );
+};
+
+export default React.memo(MeleeAttack);`
+            },
+            {
+                path: 'hooks/useGameLoop.ts',
+                content: `
+import { useEffect, useRef } from 'react';
+
+export const useGameLoop = (callback: (deltaTime: number) => void) => {
+  const requestRef = useRef<number | null>(null);
+  const previousTimeRef = useRef<number | null>(null);
+
+  const loop = (time: number) => {
+    if (previousTimeRef.current !== null) {
+      const deltaTime = time - previousTimeRef.current;
+      callback(deltaTime);
+    }
+    previousTimeRef.current = time;
+    requestRef.current = requestAnimationFrame(loop);
+  };
+
+  useEffect(() => {
+    requestRef.current = requestAnimationFrame(loop);
+    return () => {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [callback]);
+};`
+            },
+            {
+                path: 'hooks/useKeyboardInput.ts',
+                content: `
+import { useState, useEffect } from 'react';
+
+export const useKeyboardInput = (): Set<string> => {
+  const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      setKeysPressed(prev => new Set(prev).add(event.key.toLowerCase()));
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      setKeysPressed(prev => {
+        const newKeys = new Set(prev);
+        newKeys.delete(event.key.toLowerCase());
+        return newKeys;
+      });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  return keysPressed;
+};`
+            },
+            {
+                path: 'manifest.json',
+                content: `
+{
+  "short_name": "WASD Shooter",
+  "name": "Top-Down WASD Shooter",
+  "description": "A simple top-down shooter game where you control a character with WASD keys and shoot with the mouse. Survive as long as you can against incoming enemies.",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#06b6d4",
+  "background_color": "#111827"
+}`
+            },
+            {
+                path: 'sw.js',
+                content: `
+const CACHE_NAME = 'wasd-shooter-v3'; // Bump version to force update
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/index.tsx',
+  '/App.tsx',
+  '/types.ts',
+  '/constants.ts',
+  '/components/GameContainer.tsx',
+  '/components/Player.tsx',
+  '/components/Enemy.tsx',
+  '/components/Projectile.tsx',
+  '/components/HUD.tsx',
+  '/components/PowerUp.tsx',
+  '/components/Confetti.tsx',
+  '/components/MeleeAttack.tsx',
+  '/hooks/useGameLoop.ts',
+  '/hooks/useKeyboardInput.ts',
+  '/icons/icon-192.svg',
+  '/icons/icon-512.svg',
+  'https://cdn.tailwindcss.com',
+  'https://esm.sh/react@^19.1.0',
+  'https://esm.sh/react-dom@^19.1.0/client',
+  'https://esm.sh/react@^19.1.0/jsx-runtime'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('Opened cache');
+        return cache.addAll(urlsToCache);
+      })
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      }
+    )
+  );
+});
+
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});`
+            },
+            {
+                path: 'metadata.json',
+                content: `
+{
+  "name": "Copy of Copy of Top-Down WASD Shooter",
+  "description": "A simple top-down shooter game where you control a character with WASD keys and shoot with the mouse. Survive as long as you can against incoming enemies.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}`
+            }
+        ];
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        const fileListContainer = document.getElementById('file-list');
+
+        files.forEach((file, index) => {
+            const fileId = \`file-\${index}\`;
+            const container = document.createElement('div');
+            container.className = 'file-container';
+            
+            const contentText = file.content.trim();
+
+            container.innerHTML = \`
+                <div class="file-header">
+                    <h2 class="font-mono font-bold text-white">\${file.path}</h2>
+                    <button class="copy-btn" data-target="\${fileId}">Copy</button>
+                </div>
+                <pre><code id="\${fileId}">\${escapeHtml(contentText)}</code></pre>
+            \`;
+            fileListContainer.appendChild(container);
+        });
+
+        fileListContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('copy-btn')) {
+                const button = event.target;
+                const targetId = button.getAttribute('data-target');
+                const codeElement = document.getElementById(targetId);
+                
+                if (codeElement) {
+                    navigator.clipboard.writeText(codeElement.textContent).then(() => {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(() => {
+                            button.textContent = 'Copy';
+                            button.classList.remove('copied');
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy code: ', err);
+                        button.textContent = 'Error';
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
